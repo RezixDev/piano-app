@@ -48,21 +48,23 @@ const addAnimationStyles = () => {
   }
 };
 
-interface AudioContextType extends AudioContext {
-  webkitAudioContext?: AudioContext;
-}
-
+// Fix global type definitions
 declare global {
   interface Window {
-    handleKeyPress: (note: string) => void;
-  }
+  webkitAudioContext?: typeof AudioContext;
+  handleKeyPress: (note: string) => void;
 }
+  }
+
+type OscillatorType = 'sine' | 'square' | 'sawtooth' | 'triangle';
+type NumberMappingType = Record<string, string>;
+type LetterMappingType = Record<string, string>;
 
 const PianoApp = () => {
   const [keyboardLayout, setKeyboardLayout] = useState('qwerty');
   const [mode, setMode] = useState('simple');
   const [activeKeys, setActiveKeys] = useState(new Set<string>());
-  const [selectedSound, setSelectedSound] = useState<'sine' | 'square' | 'sawtooth' | 'triangle'>('sine');
+  const [selectedSound, setSelectedSound] = useState<OscillatorType>('sine');
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -95,12 +97,12 @@ const PianoApp = () => {
     { white: 'E2', black: null },
   ], []);
   
-  const numberMapping = useMemo(() => ({
+  const numberMapping = useMemo<NumberMappingType>(() => ({
     '1': 'C', '2': 'D', '3': 'E', '4': 'F', '5': 'G',
     '6': 'A', '7': 'B', '8': 'C2', '9': 'D2', '0': 'E2'
   }), []);
   
-  const letterMapping = useMemo(() => ({
+  const letterMapping = useMemo<LetterMappingType>(() => ({
     'a': 'C', 's': 'D', 'd': 'E', 'f': 'F', 'g': 'G',
     'h': 'A', 'j': 'B', 'k': 'C2', 'l': 'D2', ';': 'E2',
     ...(keyboardLayout === 'qwerty' 
@@ -111,19 +113,22 @@ const PianoApp = () => {
   }), [keyboardLayout]);
 
   const soundTypes = [
-    { id: 'sine', name: 'Sine Wave' },
-    { id: 'square', name: 'Square Wave' },
-    { id: 'sawtooth', name: 'Sawtooth' },
-    { id: 'triangle', name: 'Triangle' }
+    { id: 'sine' as const, name: 'Sine Wave' },
+    { id: 'square' as const, name: 'Square Wave' },
+    { id: 'sawtooth' as const, name: 'Sawtooth' },
+    { id: 'triangle' as const, name: 'Triangle' }
   ];
 
   // Initialize AudioContext on first user interaction
   const initAudioContext = useCallback(() => {
     if (!audioContext) {
-      const AudioContextClass = (window.AudioContext || window.webkitAudioContext) as AudioContextType;
+      const AudioContextClass = (window.AudioContext || window.webkitAudioContext);
+      if (AudioContextClass) {
       const ctx = new AudioContextClass();
       setAudioContext(ctx);
       return ctx;
+    }
+      throw new Error('AudioContext not supported');
     }
     return audioContext;
   }, [audioContext]);
@@ -135,7 +140,7 @@ const PianoApp = () => {
     const baseNote = note.split('/')[0].replace(/[0-9]/, '');
     
     // Define note frequencies (A4 = 440Hz)
-    const noteFrequencies: { [key: string]: number } = {
+    const noteFrequencies: Record<string, number> = {
       'C': 261.63,
       'C#': 277.18,
       'D': 293.66,
@@ -252,7 +257,7 @@ const PianoApp = () => {
       {/* Piano Keys */}
       <div className="relative w-full overflow-x-auto pb-4">
         <div className="flex justify-center gap-1 min-w-max mx-auto">
-          {pianoKeys.map(({ white, black }, index) => (
+          {pianoKeys.map(({ white, black }) => (
             <div key={white} className="relative">
               {/* White Key */}
               <div
