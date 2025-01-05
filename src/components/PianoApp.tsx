@@ -255,7 +255,7 @@ const PianoApp = () => {
       </div>
 
       {/* Piano Keys */}
-      <div className="relative w-full overflow-x-auto pb-4">
+      <div className="w-full overflow-hidden">
         <div className="flex justify-center gap-1 min-w-max mx-auto">
           {pianoKeys.map(({ white, black }) => (
             <div key={white} className="relative">
